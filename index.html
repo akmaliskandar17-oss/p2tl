@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulator P2TL – Aturan Pencegahan Tubrukan di Laut</title>
+<style>
+:root{--bg:#eaf0f4;--card:#fff;--ink:#0f2a3f;--mut:#4d6376;--acc:#0b7a8f;--ln:#c9d6df;--red:#c0392b;--grn:#1e8e5a;--amber:#c47f16;--ok:#dff3e8;--no:#fbe3df;--own:#0b7a8f;--tgt:#d9791f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1620;--card:#132433;--ink:#e4eef5;--mut:#93a9ba;--acc:#3cc0d6;--ln:#26404f;--ok:#12382a;--no:#40201c;--amber:#f2a03d;--own:#3cc0d6;--tgt:#f2a03d}}
+:root[data-theme="dark"]{--bg:#0b1620;--card:#132433;--ink:#e4eef5;--mut:#93a9ba;--acc:#3cc0d6;--ln:#26404f;--ok:#12382a;--no:#40201c;--amber:#f2a03d;--own:#3cc0d6;--tgt:#f2a03d}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:20px 16px 8px;max-width:900px;margin:auto}
+h1{font-size:1.45rem;margin:0 0 4px;line-height:1.25}header p{margin:0;color:var(--mut);font-size:.92rem}
+nav{display:flex;gap:6px;max-width:900px;margin:12px auto 0;padding:0 16px;overflow-x:auto;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding-bottom:8px}
+nav button{flex:0 0 auto;border:1px solid var(--ln);background:var(--card);color:var(--ink);padding:9px 14px;border-radius:8px;font:inherit;font-size:.92rem;cursor:pointer}
+nav button[aria-selected=true]{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+main{max-width:1040px;margin:auto;padding:8px 16px 40px}
+section{display:none}section.on{display:block}
+#materi,#kuis{max-width:820px;margin-left:auto;margin-right:auto}
+@media print{nav,header p,#printbtn,#clearbtn{display:none!important}
+ section:not(#nilai){display:none!important}#nilai{display:block!important}main{max-width:100%}
+ body{background:#fff;color:#000}.box{border:1px solid #999;break-inside:avoid}
+ .readout .v{color:#000!important}}
+details{background:var(--card);border:1px solid var(--ln);border-radius:8px;margin:8px 0}
+summary{padding:12px 14px;cursor:pointer;font-weight:600}
+details .in{padding:0 14px 12px}
+.r{padding:8px 0;border-top:1px solid var(--ln)}.r b{display:block;color:var(--acc);font-size:.95rem}.r span{font-size:.93rem}
+.box{background:var(--card);border:1px solid var(--ln);border-radius:8px;padding:14px;margin:10px 0}
+label{font-size:.85rem;color:var(--mut);display:block;margin:8px 0 4px}
+select,.seg button{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:9px 10px}
+select{width:100%}.seg{display:flex;gap:6px;flex-wrap:wrap}.seg button{cursor:pointer;flex:1 1 auto}
+.seg button[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+svg{width:100%;height:auto;display:block;border-radius:8px}
+ul.lg{margin:8px 0 0;padding-left:18px;font-size:.92rem}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;border:1px solid #888;margin-right:6px}
+.res{border-left:4px solid var(--acc);padding:4px 12px;margin-top:10px;font-size:.94rem}
+.opt{display:block;width:100%;text-align:left;margin:6px 0;padding:11px 12px;border:1px solid var(--ln);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
+.opt.ok{background:var(--ok);border-color:var(--grn)}.opt.no{background:var(--no);border-color:var(--red)}
+.pri{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer;margin-top:8px}
+.mut{color:var(--mut);font-size:.88rem}
+button:focus-visible,summary:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+/* situasi upgrade */
+.modewrap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+@media(max-width:640px){.modewrap{grid-template-columns:1fr}}
+.modecard{border:1px solid var(--ln);border-radius:9px;padding:10px;cursor:pointer;background:var(--bg)}
+.modecard[aria-pressed=true]{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--card))}
+.modecard .mt{font-weight:600;font-size:.9rem}.modecard .md{font-size:.78rem;color:var(--mut);margin-top:3px}
+.star{color:var(--amber)}
+.stage{display:grid;grid-template-columns:1.4fr 1fr;gap:12px}
+@media(max-width:720px){.stage{grid-template-columns:1fr}}
+.panelrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+@media(max-width:640px){.panelrow{grid-template-columns:1fr}}
+.lampstage{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin:10px 0}
+@media(max-width:640px){.lampstage{grid-template-columns:1fr}}
+#situasi.on{max-width:1040px;margin:auto}
+#situasi #sv{max-height:70vh}
+.readout{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--ln);font-size:.9rem}
+.readout:last-child{border-bottom:none}.readout .k{color:var(--mut)}
+.readout .v{font-weight:600;font-family:"Consolas",ui-monospace,monospace}
+.v.danger{color:var(--red)}.v.ok{color:var(--grn)}.v.warn{color:var(--amber)}
+.phase{display:flex;gap:6px;margin:10px 0}
+.phase .p{flex:1;text-align:center;font-size:.72rem;padding:6px 4px;border-radius:6px;background:var(--bg);border:1px solid var(--ln);color:var(--mut)}
+.phase .p.on{background:var(--amber);color:#241500;border-color:var(--amber);font-weight:600}
+.phase .p.done{background:var(--ok);color:var(--grn);border-color:var(--grn)}
+.helm{text-align:center;padding:4px 0}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.val{font-family:"Consolas",ui-monospace,monospace;color:var(--acc);font-size:.85rem}
+.helm-lbl{display:flex;justify-content:space-between;font-size:.72rem;color:var(--mut);margin-top:4px}
+.telegraph{font-size:.8rem;text-align:center;margin-top:8px;padding:6px;border-radius:6px;background:color-mix(in srgb,var(--amber) 16%,var(--card));border:1px solid var(--amber);color:var(--amber);font-weight:600}
+.evalitem{display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--ln);font-size:.88rem}
+.evalitem .i{width:20px;height:20px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700}
+.i.g{background:var(--ok);color:var(--grn)}.i.b{background:var(--no);color:var(--red)}
+.hidden{display:none!important}
+.score-pill{font-weight:700;font-size:1.05rem}
+</style></head><body>
+<header><h1>Simulator P2TL: Aturan Pencegahan Tubrukan di Laut</h1>
+<p>COLREG 1972 (IMO) untuk Nautika Kapal Niaga. Ringkasan belajar; rujukan utama tetap teks resmi IMO.</p></header>
+<nav role="tablist" id="tabs"></nav>
+<main>
+<section id="materi"></section>
+
+<section id="lampu">
+ <div class="box"><label for="vs">Jenis kapal</label><select id="vs"></select>
+ <div id="mv" style="display:none"><label>Kondisi</label><div class="seg" id="mvs"></div></div></div>
+
+ <div class="lampstage">
+  <!-- pemandangan malam: kapal dilihat dari arah pengamat -->
+  <div class="box" style="margin:0">
+   <div class="mut" style="font-size:.8rem;margin-bottom:6px">Pemandangan malam — kapal dilihat dari posisi Anda</div>
+   <svg id="scene" viewBox="0 0 360 230" role="img" aria-label="Tampilan lampu navigasi malam hari"></svg>
+  </div>
+  <!-- peta atas: sektor lampu + posisi pengamat -->
+  <div class="box" style="margin:0">
+   <div class="mut" style="font-size:.8rem;margin-bottom:6px">Tampak atas — sektor pancar lampu &amp; posisi Anda</div>
+   <svg id="topview" viewBox="0 0 300 300" role="img" aria-label="Tampak atas kapal dan sektor lampu"></svg>
+  </div>
+ </div>
+
+ <div class="box">
+  <label>Putar posisi pengamat mengelilingi kapal — <span class="val" id="brg-val">Haluan · 000°</span></label>
+  <input type="range" id="brg" min="0" max="359" value="0">
+  <div class="helm-lbl"><span>Haluan</span><span>Kanan</span><span>Buritan</span><span>Kiri</span><span>Haluan</span></div>
+  <div class="seg" style="margin-top:8px">
+   <button id="lspin" class="pri" style="flex:2;margin:0">▶ Putar otomatis</button>
+   <button id="lquiz" style="border:1px solid var(--ln);background:var(--bg);color:var(--ink);border-radius:8px;padding:9px 12px;cursor:pointer;flex:1;font:inherit">Tebak posisi</button>
+  </div>
+  <div id="lquizbox"></div>
+ </div>
+
+ <div class="box"><b id="lref"></b><ul class="lg" id="lleg"></ul><p class="mut" id="lnote"></p></div>
+</section>
+
+<section id="situasi">
+ <div class="box"><label for="ss">Situasi kapal bertemu</label><select id="ss"></select></div>
+
+ <div class="box"><label>Mode simulasi</label>
+  <div class="modewrap" id="modes"></div>
+  <div class="panelrow" style="margin-top:10px">
+   <div><label style="margin-top:0">Jarak pandang</label><div class="seg" id="vis"></div></div>
+   <div><label style="margin-top:0">Kapal yang Anda kemudikan (mode manual)</label><div class="seg" id="ctrlship"></div></div>
+  </div>
+ </div>
+
+ <!-- PETA LEBAR PENUH -->
+ <div class="box" style="margin:0 0 12px">
+  <svg id="sv" viewBox="0 0 640 460" role="img" aria-label="Diagram situasi bertemu kapal"></svg>
+  <div class="phase" id="phase"></div>
+  <div class="seg" style="margin-top:4px">
+   <button class="pri" id="pl" style="flex:2">Mulai</button>
+   <button id="rs2" style="border:1px solid var(--ln);background:var(--bg);color:var(--ink);border-radius:8px;padding:9px 12px;cursor:pointer;flex:1;font:inherit">Ulangi</button>
+  </div>
+  <label>Kecepatan simulasi</label><div class="seg" id="spd"></div>
+ </div>
+
+ <!-- PANEL DATA + KEMUDI (satu baris) -->
+ <div class="panelrow">
+  <div class="box" style="margin:0">
+   <div class="readout"><span class="k">Bearing B</span><span class="v" id="rd-brg">–</span></div>
+   <div class="readout"><span class="k">Jarak</span><span class="v" id="rd-rng">–</span></div>
+   <div class="readout"><span class="k">CPA</span><span class="v" id="rd-cpa">–</span></div>
+   <div class="readout"><span class="k">TCPA</span><span class="v" id="rd-tcpa">–</span></div>
+   <div class="readout"><span class="k">Risiko tubrukan</span><span class="v" id="rd-risk">–</span></div>
+  </div>
+
+  <div class="box hidden" id="manualbox" style="margin:0">
+   <div style="font-weight:600;font-size:.85rem;margin-bottom:4px">Kemudi <span id="helm-ship">Kapal A</span> <span class="star">★ manual</span></div>
+   <div class="helm">
+     <svg viewBox="0 0 120 120" style="width:110px;margin:auto" aria-hidden="true">
+       <circle cx="60" cy="60" r="46" fill="none" stroke="#2a6076" stroke-width="7"/>
+       <g id="wheelspokes" transform="rotate(0 60 60)">
+         <line x1="60" y1="60" x2="60" y2="10" stroke="var(--acc)" stroke-width="3"/>
+         <line x1="60" y1="60" x2="60" y2="110" stroke="var(--acc)" stroke-width="3"/>
+         <line x1="60" y1="60" x2="10" y2="60" stroke="var(--acc)" stroke-width="3"/>
+         <line x1="60" y1="60" x2="110" y2="60" stroke="var(--acc)" stroke-width="3"/>
+       </g>
+       <circle cx="60" cy="60" r="8" fill="var(--acc)"/>
+     </svg>
+   </div>
+   <label>Kemudi (rudder) — <span class="val" id="rud-val">Midship</span></label>
+   <input type="range" id="rud" min="-35" max="35" value="0">
+   <div class="helm-lbl"><span>◄ Port</span><span>Midship</span><span>Stbd ►</span></div>
+   <label>Kecepatan (telegraph) — <span class="val" id="eng-val">Half</span></label>
+   <input type="range" id="eng" min="0" max="20" value="12" step="1">
+   <div class="helm-lbl"><span>Stop</span><span>Slow</span><span>Half</span><span>Full</span></div>
+   <div class="telegraph" id="telegraph">MIDSHIP · HALF AHEAD</div>
+  </div>
+ </div>
+
+ <div class="box"><div id="sres"></div><div id="evalbox"></div></div>
+</section>
+
+<section id="siang">
+ <div class="box"><label for="dvs">Jenis kapal / keadaan (siang hari)</label><select id="dvs"></select></div>
+ <div class="lampstage">
+  <div class="box" style="margin:0">
+   <div class="mut" style="font-size:.8rem;margin-bottom:6px">Bentuk benda (isyarat siang hari)</div>
+   <svg id="dscene" viewBox="0 0 300 260" role="img" aria-label="Bentuk benda siang hari"></svg>
+  </div>
+  <div class="box" style="margin:0"><b id="dref"></b><ul class="lg" id="dleg"></ul><p class="mut" id="dnote"></p></div>
+ </div>
+</section>
+
+<section id="bunyi">
+ <div class="box">
+  <p class="mut" style="margin-top:0">Tekan tombol untuk mendengar isyarat bunyi sesuai Aturan 34 & 35. Tiup pendek ≈ 1 detik, tiup panjang 4–6 detik.</p>
+  <div id="soundlist"></div>
+ </div>
+ <div class="box"><b>Tebak isyarat</b>
+  <p class="mut" style="margin:6px 0">Dengarkan lalu pilih artinya.</p>
+  <button class="pri" id="splay" style="margin-top:0">🔊 Putar isyarat acak</button>
+  <div id="squizbox"></div>
+ </div>
+</section>
+
+<section id="kuis"><div class="box"><label>Mode kuis</label><div class="seg" id="quizmode"></div></div><div class="box" id="qbox"></div></section>
+
+<section id="nilai">
+ <div class="box"><b>Rekap nilai</b><p class="mut" style="margin:6px 0 0">Riwayat tersimpan di perangkat ini.</p></div>
+ <div id="nilaibox"></div>
+ <div class="box">
+  <button class="pri" id="printbtn" style="margin-top:0">🖨 Cetak / simpan PDF</button>
+  <button id="clearbtn" style="border:1px solid var(--ln);background:var(--bg);color:var(--ink);border-radius:8px;padding:9px 12px;cursor:pointer;font:inherit;margin-left:6px">Hapus riwayat</button>
+ </div>
+</section>
+</main>
+<script>
+const $=s=>document.querySelector(s),SR=Math.PI/180;
+const tabs=[['materi','Materi'],['lampu','Simulasi lampu'],['siang','Bentuk siang'],['situasi','Situasi bertemu'],['bunyi','Isyarat bunyi'],['kuis','Kuis'],['nilai','Nilai']];
+tabs.forEach(([id,t],i)=>{const b=document.createElement('button');b.textContent=t;b.setAttribute('role','tab');b.setAttribute('aria-selected',i==0);
+b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x==b));document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==id))};$('#tabs').append(b)});
+$('#materi').classList.add('on');
+
+/* ============ MATERI ============ */
+const M=[
+['Bagian A – Umum (Aturan 1–3)',[['Aturan 1 – Penerapan','Berlaku bagi semua kapal di laut lepas dan perairan yang berhubungan dengannya yang dapat dilayari kapal laut.'],['Aturan 2 – Tanggung jawab','Aturan ini tidak membebaskan nakhoda dari akibat kelalaian menjalankan aturan atau kelalaian berjaga dan kewaspadaan pelaut yang baik (good seamanship).'],['Aturan 3 – Definisi umum','Memuat definisi kapal, kapal tenaga, kapal layar, kapal penangkap ikan, kapal tidak terkendali, kapal terbatas olah gerak, kapal terbatas oleh saratnya, sedang berlayar (underway), panjang, lebar, saling melihat, dan jarak pandang terbatas.']]],
+['Bagian B – Kemudi dan Berlayar (Aturan 4–19)',[['Aturan 5 – Pengamatan','Setiap kapal harus selalu melakukan pengamatan yang layak dengan penglihatan, pendengaran, dan semua sarana yang tersedia.'],['Aturan 6 – Kecepatan aman','Kapal harus selalu berlayar dengan kecepatan aman agar dapat mengambil tindakan tepat dan efektif untuk menghindari tubrukan dan dapat berhenti dalam jarak yang sesuai.'],['Aturan 7 – Risiko tubrukan','Gunakan semua sarana yang ada. Jika ada keraguan, anggap risiko itu ada. Bearing kompas yang tidak berubah berarti risiko tubrukan. Pengamatan radar harus memakai plotting yang memadai.'],['Aturan 8 – Tindakan menghindari tubrukan','Tindakan harus tegas, dilakukan dalam waktu yang cukup, dan mencerminkan good seamanship. Perubahan haluan atau kecepatan harus cukup besar agar mudah terlihat kapal lain.'],['Aturan 9 – Alur pelayaran sempit','Berlayar sedekat mungkin dengan batas luar alur di sisi kanan kapal. Kapal kurang dari 20 m atau kapal layar tidak boleh menghalangi kapal yang hanya dapat berlayar aman di dalam alur.'],['Aturan 10 – Skema pemisah lalu lintas (TSS)','Ikuti arah lalu lintas umum pada jalur yang ditentukan, tinggalkan atau masuk jalur di ujungnya bila memungkinkan, dan bila menyeberang harus dengan sudut siku-siku sedapat mungkin.'],['Aturan 13 – Menyusul','Kapal yang menyusul harus menyingkir dari kapal yang disusul. Dianggap menyusul bila mendekat dari arah lebih dari 22,5° di belakang arah melintang kapal yang disusul. Jika ragu, anggap sedang menyusul.'],['Aturan 14 – Berhadapan haluan','Kapal tenaga berhadapan pada haluan yang berlawanan atau hampir berlawanan dengan risiko tubrukan: masing-masing mengubah haluan ke kanan sehingga saling melewati lambung kiri ke lambung kiri.'],['Aturan 15 – Bersilangan','Dua kapal tenaga bersilangan dengan risiko tubrukan: kapal yang melihat kapal lain di lambung kanannya harus menyingkir dan bila keadaan mengizinkan menghindari memotong haluan kapal itu.'],['Aturan 16 – Kapal yang menyingkir (give-way)','Harus mengambil tindakan awal dan tegas untuk menjauh sepenuhnya.'],['Aturan 17 – Kapal yang bertahan (stand-on)','Pertahankan haluan dan kecepatan. Boleh bertindak sendiri bila kapal give-way jelas tidak bertindak dan wajib bertindak bila tubrukan tidak dapat dihindari dengan tindakan kapal give-way saja. Bila terpaksa mengubah haluan, jangan ke kiri terhadap kapal di lambung kirinya.'],['Aturan 18 – Tanggung jawab antar kapal','Urutan dari yang paling harus menyingkir ke yang paling diutamakan: kapal tenaga, kapal layar, kapal penangkap ikan, kapal tidak terkendali, kapal terbatas olah gerak. Kapal terbatas oleh sarat mendapat aturan khusus.'],['Aturan 19 – Jarak pandang terbatas','Berlaku bila kapal tidak saling melihat di dalam atau dekat area jarak pandang terbatas. Berlayar dengan kecepatan aman, mesin siap olah gerak. Bila mendengar isyarat kabut kapal lain di depan melintang, kurangi kecepatan sampai minimum untuk tetap dapat dikemudikan. Hindari belok ke kiri terhadap kapal di depan melintang, kecuali menyusul, dan hindari belok ke arah kapal di belakang melintang.']]],
+['Bagian C – Lampu dan Bentuk Benda (Aturan 20–31)',[['Aturan 20–22','Lampu ditunjukkan dari matahari terbenam sampai terbit dan saat jarak pandang terbatas. Jangkauan minimum bergantung panjang kapal (kapal ≥ 50 m: lampu tiang 6 mil, lampu lambung 3 mil, lampu buritan 3 mil).'],['Busur lampu','Lampu tiang 225° (dari haluan sampai 22,5° di belakang melintang tiap sisi). Lampu lambung 112,5° per sisi, merah kiri, hijau kanan. Lampu buritan 135° putih. Lampu keliling 360°.'],['Aturan 23 – Kapal tenaga','Kapal ≥ 50 m: dua lampu tiang, lampu lambung, lampu buritan. Kapal < 50 m: satu lampu tiang.'],['Aturan 24 – Menunda dan mendorong','Lampu tiang tambahan sesuai panjang tunda dan lampu tunda kuning di atas lampu buritan.'],['Aturan 25 – Kapal layar dan dayung','Lampu lambung dan lampu buritan. Bila menggunakan mesin, harus menunjukkan lampu kapal tenaga.'],['Aturan 26 – Kapal penangkap ikan','Trawl: hijau di atas putih (keliling). Bukan trawl: merah di atas putih (keliling). Lampu lambung dan buritan hanya bila bergerak menurut air.'],['Aturan 27 – Tidak terkendali dan terbatas olah gerak','Tidak terkendali: dua lampu merah keliling vertikal. Terbatas olah gerak: merah-putih-merah vertikal.'],['Aturan 28–31','Kapal terbatas oleh sarat (tiga lampu merah keliling), kapal pandu (putih di atas merah), kapal berlabuh dan kandas, pesawat terbang air.']]],
+['Bagian D – Isyarat Suara dan Cahaya (Aturan 32–37)',[['Definisi','Tiup pendek sekitar 1 detik. Tiup panjang 4–6 detik.'],['Aturan 34(a) – Olah gerak (kapal saling melihat)','1 tiup pendek: mengubah haluan ke kanan. 2 tiup pendek: mengubah haluan ke kiri. 3 tiup pendek: mesin bergerak mundur.'],['Aturan 34(d) – Isyarat peringatan','Lima tiup pendek atau lebih dan cepat: keraguan terhadap maksud atau tindakan kapal lain.'],['Aturan 35 – Jarak pandang terbatas','Kapal tenaga bergerak menurut air: 1 tiup panjang tiap ≤ 2 menit. Kapal tenaga berhenti: 2 tiup panjang berurutan tiap ≤ 2 menit.'],['Aturan 37 – Marabahaya','Isyarat marabahaya sesuai Lampiran IV (misalnya SOS, MAYDAY, roket parasut merah, asap oranye).']]],
+['Bagian E – Pembebasan (Aturan 38)',[['Aturan 38','Memuat ketentuan pembebasan sementara bagi kapal yang dibangun sebelum berlakunya aturan ini.']]]];
+$('#materi').innerHTML=M.map(([t,r])=>`<details><summary>${t}</summary><div class="in">${r.map(([a,b])=>`<div class="r"><b>${a}</b><span>${b}</span></div>`).join('')}</div></details>`).join('');
+
+/* ============ LAMPU (interaktif berputar) ============ */
+const W='#fff8d6',R='#ff3b30',G='#22d36b';
+/* Lampu: k=jenis busur, c=warna, h=tinggi (0 bawah..1 atas utk tampilan malam), n=nama.
+   Busur pancar (bearing pengamat, 0=haluan,90=kanan,180=buritan,270=kiri):
+   stbd 0..112.5 · port 247.5..360 · mast 247.5..112.5 (225° depan) · stern 112.5..247.5 (135°) · all 360 */
+const Lt=(k,c,h,n)=>({k,c,h,n});
+const side=[Lt('stbd',G,.5,'Lampu lambung kanan (hijau)'),Lt('port',R,.5,'Lampu lambung kiri (merah)')];
+const stern=Lt('stern',W,.45,'Lampu buritan (putih)');
+const V={
+ t50:{n:'Kapal tenaga ≥ 50 m',r:'Aturan 23(a)',l:[Lt('mast',W,.9,'Lampu tiang belakang (lebih tinggi)'),Lt('mast',W,.72,'Lampu tiang depan'),...side,stern],note:'Dua lampu tiang segaris; yang belakang lebih tinggi.'},
+ t49:{n:'Kapal tenaga < 50 m',r:'Aturan 23(a)',l:[Lt('mast',W,.75,'Lampu tiang (putih)'),...side,stern],note:'Satu lampu tiang di depan.'},
+ lay:{n:'Kapal layar',r:'Aturan 25(a)',l:[...side,stern],note:'Tanpa lampu tiang. Bila mesin dipakai, dianggap kapal tenaga.'},
+ trw:{n:'Kapal penangkap ikan – trawl',r:'Aturan 26(b)',m:1,l:[Lt('all',G,.85,'Lampu keliling hijau (atas)'),Lt('all',W,.68,'Lampu keliling putih (bawah)')],mv:[...side,stern],note:'Trawl: hijau di atas putih. Lampu lambung & buritan hanya saat bergerak menurut air.'},
+ fsh:{n:'Kapal penangkap ikan – bukan trawl',r:'Aturan 26(c)',m:1,l:[Lt('all',R,.85,'Lampu keliling merah (atas)'),Lt('all',W,.68,'Lampu keliling putih (bawah)')],mv:[...side,stern],note:'Bukan trawl: merah di atas putih. Lampu lambung & buritan hanya saat bergerak menurut air.'},
+ nuc:{n:'Kapal tidak terkendali',r:'Aturan 27(a)',m:1,l:[Lt('all',R,.85,'Lampu keliling merah (atas)'),Lt('all',R,.68,'Lampu keliling merah (bawah)')],mv:[...side,stern],note:'Dua merah vertikal. Lampu lambung & buritan hanya saat masih bergerak menurut air.'},
+ ram:{n:'Kapal terbatas olah gerak',r:'Aturan 27(b)',m:1,l:[Lt('all',R,.9,'Lampu keliling merah (atas)'),Lt('all',W,.75,'Lampu keliling putih (tengah)'),Lt('all',R,.6,'Lampu keliling merah (bawah)')],mv:[Lt('mast',W,.72,'Lampu tiang (putih)'),...side,stern],note:'Merah-putih-merah vertikal. Saat bergerak menurut air ditambah lampu tiang, lambung & buritan.'}};
+const ARC={stbd:[0,112.5],port:[247.5,360],mast:[247.5,112.5],stern:[112.5,247.5],all:[0,360]};
+let vk='t50',brg=0,mvg=true,lspin=false,lraf=0;
+$('#vs').innerHTML=Object.entries(V).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join('');
+$('#vs').onchange=e=>{vk=e.target.value;drawL()};
+function segL(el,items,get,set){el.innerHTML='';items.forEach(([v,t])=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{set(v);segL(el,items,get,set);drawL()};b.setAttribute('aria-pressed',get()==v);el.append(b)})}
+function inArc(b,lo,hi){b=((b%360)+360)%360;lo=((lo%360)+360)%360;hi=((hi%360)+360)%360;return lo<=hi?(b>=lo&&b<=hi):(b>=lo||b<=hi)}
+function visL(k,b){if(k=='all')return true;const[lo,hi]=ARC[k];return inArc(b,lo,hi)}
+function aspName(b){b=((b%360)+360)%360;
+ if(b<=22.5||b>=337.5)return'Haluan (depan)';
+ if(b<112.5)return'Lambung kanan';
+ if(b<=157.5)return'Buritan kanan';
+ if(b<202.5)return'Buritan';
+ if(b<=247.5)return'Buritan kiri';
+ return'Lambung kiri'}
+
+/* pemandangan malam: lampu yang terlihat, disusun kiri-kanan menurut posisi melintang */
+function drawScene(shown){
+ let s='<defs><filter id="g"><feGaussianBlur stdDeviation="4"/></filter></defs>'+
+  '<rect width="360" height="230" fill="#04101c"/><rect y="196" width="360" height="34" fill="#071726"/>'+
+  '<line x1="0" x2="360" y1="196" y2="196" stroke="#123049"/>';
+ if(!shown.length){s+='<text x="180" y="115" fill="#6b869a" text-anchor="middle" font-size="14">Tidak ada lampu terlihat dari sini</text>';$('#scene').innerHTML=s;return}
+ // urutkan lampu keliling & bertumpuk vertikal di tengah; sidelight/mast/stern di posisi khasnya
+ shown.forEach(l=>{
+  let x=180;
+  if(l.k=='stbd')x=132; else if(l.k=='port')x=228; // hijau kiri layar (kanan kapal) saat menghadap kita
+  else if(l.k=='stern')x=180;
+  const y=196-(l.h*150);
+  s+=`<circle cx="${x}" cy="${y}" r="10" fill="${l.c}" filter="url(#g)" opacity=".85"/><circle cx="${x}" cy="${y}" r="4" fill="${l.c}"/>`;
+ });
+ $('#scene').innerHTML=s;
+}
+
+/* tampak atas: kapal + sektor pancar + posisi pengamat */
+function sector(cx,cy,rad,lo,hi,color){
+ const a0=(lo-90)*SR,a1=(hi-90)*SR; // bearing 0 = atas
+ const x0=cx+rad*Math.cos(a0),y0=cy+rad*Math.sin(a0),x1=cx+rad*Math.cos(a1),y1=cy+rad*Math.sin(a1);
+ let sweep=((hi-lo)+360)%360;const large=sweep>180?1:0;
+ return `<path d="M${cx} ${cy} L${x0.toFixed(1)} ${y0.toFixed(1)} A${rad} ${rad} 0 ${large} 1 ${x1.toFixed(1)} ${y1.toFixed(1)} Z" fill="${color}" opacity=".13" stroke="${color}" stroke-opacity=".4"/>`;
+}
+function drawTop(v,shown){
+ const cx=150,cy=150;
+ let s=`<rect width="300" height="300" fill="#04101c"/>`;
+ // sektor tiap lampu yang aktif (jenis unik)
+ const kinds=[...new Set(shown.map(l=>l.k))];
+ kinds.forEach(k=>{if(k=='all'){s+=`<circle cx="${cx}" cy="${cy}" r="120" fill="none" stroke="#888" stroke-dasharray="2 3" opacity=".3"/>`;return}
+  const[lo,hi]=ARC[k];const col=k=='stbd'?G:k=='port'?R:'#cfe';s+=sector(cx,cy,120,lo,hi,col)});
+ // badan kapal (haluan ke atas)
+ s+=`<g transform="translate(${cx} ${cy})"><path d="M0-46 L15-10 L15 40 L-15 40 L-15-10 Z" fill="#14344a" stroke="#2c5a76"/></g>`;
+ s+=`<text x="${cx}" y="18" fill="#6b869a" font-size="11" text-anchor="middle">Haluan</text>`;
+ // garis & titik pengamat
+ const a=(brg-90)*SR,ox=cx+128*Math.cos(a),oy=cy+128*Math.sin(a);
+ s+=`<line x1="${cx}" y1="${cy}" x2="${ox.toFixed(1)}" y2="${oy.toFixed(1)}" stroke="#3cc0d6" stroke-dasharray="4 4" opacity=".7"/>`;
+ s+=`<circle cx="${ox.toFixed(1)}" cy="${oy.toFixed(1)}" r="9" fill="#3cc0d6"/><text x="${ox.toFixed(1)}" y="${(oy+4).toFixed(1)}" font-size="10" text-anchor="middle" fill="#04101c" font-weight="700">👁</text>`;
+ $('#topview').innerHTML=s;
+}
+
+function drawL(){
+ const v=V[vk];$('#mv').style.display=v.m?'block':'none';
+ segL($('#mvs'),[[true,'Bergerak menurut air'],[false,'Berhenti / tidak bergerak']],()=>mvg,x=>mvg=x);
+ let ls=[...v.l];if(v.m&&mvg)ls=[...ls,...v.mv];
+ const shown=ls.filter(l=>visL(l.k,brg));
+ drawScene(shown);drawTop(v,shown);
+ $('#brg-val').textContent=aspName(brg)+' · '+String(Math.round(brg)).padStart(3,'0')+'°';
+ $('#lref').textContent=v.n+' – '+v.r;
+ $('#lleg').innerHTML=shown.length?shown.map(l=>`<li><span class="dot" style="background:${l.c}"></span>${l.n}</li>`).join(''):'<li>Dari sudut ini tidak ada lampu yang terlihat.</li>';
+ $('#lnote').textContent=v.note+' Posisi pengamat: '+aspName(brg)+'.';
+}
+$('#brg').addEventListener('input',e=>{brg=+e.target.value;drawL()});
+/* putar otomatis */
+function lspinFrame(){if(!lspin)return;brg=(brg+0.6)%360;$('#brg').value=Math.round(brg);drawL();lraf=requestAnimationFrame(lspinFrame)}
+$('#lspin').onclick=()=>{lspin=!lspin;$('#lspin').textContent=lspin?'⏸ Berhenti':'▶ Putar otomatis';
+ if(lspin){lraf=requestAnimationFrame(lspinFrame)}else cancelAnimationFrame(lraf)};
+/* kuis tebak posisi: tampilkan lampu dari bearing acak, tebak sisi mana */
+let lqAns=null;
+$('#lquiz').onclick=()=>{
+ if(lspin){lspin=false;$('#lspin').textContent='▶ Putar otomatis';cancelAnimationFrame(lraf)}
+ lqAns=Math.floor(Math.random()*360);brg=lqAns;$('#brg').value=lqAns;drawL();
+ const opts=['Haluan (depan)','Lambung kanan','Buritan','Lambung kiri'];
+ const correct=()=>{const b=((lqAns%360)+360)%360;if(b<=45||b>=315)return 0;if(b<135)return 1;if(b<=225)return 2;return 3};
+ $('#lquizbox').innerHTML='<p class="mut" style="margin:10px 0 4px">Anda melihat kapal ini. Anda berada di sisi mana kapal?</p>'+
+  opts.map((t,i)=>`<button class="opt" data-i="${i}">${t}</button>`).join('')+'<div id="lfb"></div>';
+ $('#lquizbox').querySelectorAll('.opt').forEach(o=>o.onclick=()=>{const ci=correct(),ok=+o.dataset.i==ci;
+  $('#lquizbox').querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(+x.dataset.i==ci)x.classList.add('ok')});if(!ok)o.classList.add('no');
+  $('#lfb').innerHTML=`<div class="res">${ok?'Benar. ':'Belum tepat. '}Posisi pengamat: ${aspName(lqAns)} (${String(lqAns).padStart(3,'0')}°).</div>`});
+};
+drawL();
+
+/* ============ SITUASI BERTEMU (rewrite) ============ */
+/* Koordinat SVG 640x460. x kanan, y bawah. Heading 0=Utara(atas), 90=Timur(kanan). */
+const P0=[320,300];
+const CW=640,CH=460;
+const DUR=26;                 // durasi maksimum simulasi (detik-sim)
+const PXNM=42;                // 42 px = 1 NM (tampilan)
+const NM=px=>px/PXNM;
+const KN2PX=2.0;              // 1 knot -> px per detik-sim (skala tampilan)
+
+const S=[
+ {n:'Berhadapan haluan (Aturan 14)',A:{h:0,v:14},B:{h:180,v:14},bx:320,by:60,gw:['A','B'],
+  hd:'Kedua kapal give-way',t:'Keduanya wajib mengubah haluan ke kanan dan saling melewati lambung kiri ke lambung kiri (port-to-port).',a:'Tidak ada stand-on. Kedua kapal bertindak dan perubahan harus cukup besar.'},
+ {n:'Bersilangan – B di lambung kanan (Aturan 15, 16)',A:{h:0,v:13},B:{h:250,v:12},bx:424,by:142,gw:['A'],
+  hd:'Kapal A (Anda): give-way',t:'B berada di lambung kanan Anda. Anda harus menyingkir. Ubah haluan ke kanan atau kurangi kecepatan dan hindari memotong haluan B.',a:'B: stand-on (Aturan 17), pertahankan haluan dan kecepatan.'},
+ {n:'Bersilangan – B di lambung kiri (Aturan 15, 17)',A:{h:0,v:13},B:{h:110,v:12},bx:216,by:142,gw:['B'],
+  hd:'Kapal A (Anda): stand-on',t:'B berada di lambung kiri Anda dan B yang harus menyingkir. Pertahankan haluan dan kecepatan.',a:'Bila B jelas tidak bertindak, Anda boleh bertindak sendiri, tetapi jangan belok ke kiri. Bila tubrukan tidak dapat dihindari oleh B saja, Anda wajib bertindak.'},
+ {n:'Anda menyusul B (Aturan 13)',A:{h:0,v:20},B:{h:0,v:7},bx:320,by:180,gw:['A'],
+  hd:'Kapal A (Anda): give-way',t:'Anda mendekat dari belakang B (lebih dari 22,5° di belakang melintang B). Anda wajib menyingkir dan tetap bertanggung jawab sampai kapal sepenuhnya lewat dan bebas.',a:'B: stand-on. Perubahan bearing kemudian tidak menjadikan Anda kapal bersilangan.'},
+ {n:'B menyusul Anda (Aturan 13, 17)',A:{h:0,v:7},B:{h:0,v:20},bx:320,by:430,gw:['B'],
+  hd:'Kapal A (Anda): stand-on',t:'B mendekat dari belakang Anda. B wajib menyingkir. Pertahankan haluan dan kecepatan.',a:'Jika ragu apakah sedang disusul, anggap Anda sedang disusul dan tetap waspada.'}];
+$('#ss').innerHTML=S.map((s,i)=>`<option value="${i}">${s.n}</option>`).join('');
+
+const MODES=[
+ {t:'1 · Otomatis — tanpa aksi',d:'Kapal tidak menghindar → menuju tubrukan. Menunjukkan bahaya.'},
+ {t:'2 · Otomatis — aksi benar ★',d:'Give-way menghindar lalu kembali ke haluan awal setelah aman.'},
+ {t:'3 · Manual — Anda mengemudi A ★',d:'Atur sendiri haluan & kecepatan Kapal A saat simulasi jalan.'}];
+let mode=1,sp=1,sim=null,raf=0,last=0,run=false;
+let rudder=0,engine=13,fog=false,ctrl='A';
+
+function drawModes(){$('#modes').innerHTML='';MODES.forEach((m,i)=>{const md=i+1;const c=document.createElement('div');
+ c.className='modecard';c.setAttribute('role','button');c.setAttribute('aria-pressed',mode==md);c.tabIndex=0;
+ c.innerHTML=`<div class="mt">${m.t.replace('★','<span class=star>★</span>')}</div><div class="md">${m.d}</div>`;
+ const sel=()=>{mode=md;drawModes();$('#manualbox').classList.toggle('hidden',mode!=3);reset()};
+ c.onclick=sel;c.onkeydown=e=>{if(e.key=='Enter'||e.key==' '){e.preventDefault();sel()}};$('#modes').append(c)})}
+drawModes();
+/* kontrol kabut & kapal kendali */
+function sgVis(){const el=$('#vis');el.innerHTML='';[[false,'☀ Saling melihat'],[true,'🌫 Kabut (Aturan 19)']].forEach(([v,t])=>{
+ const b=document.createElement('button');b.textContent=t;b.setAttribute('aria-pressed',fog==v);b.onclick=()=>{fog=v;sgVis();reset()};el.append(b)})}
+function sgCtrl(){const el=$('#ctrlship');el.innerHTML='';[['A','Kapal A'],['B','Kapal B']].forEach(([v,t])=>{
+ const b=document.createElement('button');b.textContent=t;b.setAttribute('aria-pressed',ctrl==v);b.onclick=()=>{ctrl=v;sgCtrl();$('#helm-ship').textContent='Kapal '+ctrl;reset()};el.append(b)})}
+sgVis();sgCtrl();
+
+/* buat kapal */
+function mk(o,x,y){return{h:o.h,h0:o.h,v:o.v,v0:o.v,x,y,tr:[[x,y]]}}
+function reset(){cancelAnimationFrame(raf);run=false;$('#pl').textContent='Mulai';
+ const s=S[+$('#ss').value];
+ const A=mk(s.A,P0[0],P0[1]);const B=mk(s.B,s.bx,s.by);
+ const cs=ctrl=='A'?s.A:s.B;
+ rudder=0;engine=cs.v;$('#rud').value=0;$('#eng').value=Math.round(cs.v);
+ sim={t:0,s,A,B,hit:0,end:0,minD:1e9,acted:0,actT:-1,actRud:0,phase:0,resumed:0,passedMin:0};
+ updateHelm();drawS();info()}
+
+/* selisih sudut -180..180 */
+function angDiff(a,b){let d=((a-b)%360+540)%360-180;return d}
+
+/* satu langkah waktu (dt detik-sim) */
+function step(dt){const z=sim,s=z.s;if(z.hit||z.end)return;
+ const A=z.A,B=z.B;
+
+ // --- MODE 2: give-way belok kanan lalu kembali ---
+ if(mode==2){
+  s.gw.forEach(id=>{const o=id=='A'?A:B;
+   if(z.phase<3){ // fase menghindar: belok ke kanan sampai +45 dari h0
+    if(z.t>=0.8){z.phase=Math.max(z.phase,1);
+     const target=o.h0+45;
+     if(angDiff(target,o.h)>0.5)o.h+=Math.min(28*dt,angDiff(target,o.h));
+    }
+   }else{ // fase kembali ke haluan awal
+    const d=angDiff(o.h0,o.h);
+    if(Math.abs(d)>0.5)o.h+=Math.sign(d)*Math.min(28*dt,Math.abs(d));
+    else{o.h=o.h0;z.resumed=1;z.phase=4}
+   }
+  });
+ }
+
+ // --- MODE 3: manual, kemudi & mesin kendalikan kapal terpilih ---
+ if(mode==3){
+  const o=ctrl=='A'?A:B;
+  o.h += rudder*dt*0.9;
+  o.h = (o.h%360+360)%360;
+  o.v += (engine-o.v)*Math.min(1,dt*1.5);
+  if(!z.acted && Math.abs(rudder)>4){z.acted=1;z.actT=z.t;z.actRud=rudder}
+ }
+
+ // --- integrasi posisi ---
+ [A,B].forEach(o=>{
+  o.x+=Math.sin(o.h*SR)*o.v*KN2PX*dt;
+  o.y-=Math.cos(o.h*SR)*o.v*KN2PX*dt;
+  if(o.tr.length===0||Math.hypot(o.x-o.tr[o.tr.length-1][0],o.y-o.tr[o.tr.length-1][1])>2)o.tr.push([o.x,o.y]);
+ });
+
+ z.t+=dt;
+ const d=Math.hypot(A.x-B.x,A.y-B.y);
+ if(d<z.minD){z.minD=d}
+ // tandai bahwa jarak sudah melewati minimum (mulai menjauh)
+ if(z.t>2 && d>z.minD+6) z.passedMin=1;
+
+ // deteksi mode 2 aman -> kembali
+ if(mode==2 && z.phase>=1 && z.phase<3 && z.passedMin) z.phase=3;
+
+ if(d<17){z.hit=1}
+ else if(z.t>=DUR || (z.passedMin && d>230)) z.end=1;
+}
+
+/* CPA / TCPA dari kecepatan relatif (satuan NM & menit tampilan) */
+function cpaTcpa(){const z=sim,A=z.A,B=z.B;
+ const avx=Math.sin(A.h*SR)*A.v, avy=-Math.cos(A.h*SR)*A.v;
+ const bvx=Math.sin(B.h*SR)*B.v, bvy=-Math.cos(B.h*SR)*B.v;
+ const rx=B.x-A.x, ry=B.y-A.y;                    // px
+ const vx=(bvx-avx)*KN2PX, vy=(bvy-avy)*KN2PX;    // px per detik-sim
+ const v2=vx*vx+vy*vy;
+ let tc=v2>1e-6? -(rx*vx+ry*vy)/v2 : 0; if(tc<0)tc=0;
+ const cx=rx+vx*tc, cy=ry+vy*tc;
+ return{cpa:NM(Math.hypot(cx,cy)), tcpa:tc, closing:(rx*vx+ry*vy)<0};
+}
+
+function readouts(){const z=sim,A=z.A,B=z.B;
+ const rx=B.x-A.x, ry=B.y-A.y;
+ const brg=(Math.atan2(rx,-ry)/SR+360)%360;
+ $('#rd-brg').textContent=String(Math.round(brg)).padStart(3,'0')+'°';
+ $('#rd-rng').textContent=NM(Math.hypot(rx,ry)).toFixed(1)+' NM';
+ const ct=cpaTcpa();
+ $('#rd-cpa').textContent=ct.cpa.toFixed(2)+' NM';
+ $('#rd-cpa').className='v '+(ct.cpa<0.4?'danger':ct.cpa<1?'warn':'ok');
+ $('#rd-tcpa').textContent=(ct.closing&&ct.tcpa>0.05)?ct.tcpa.toFixed(1)+' mnt':'—';
+ const rk=$('#rd-risk');
+ if(z.hit){rk.textContent='TUBRUKAN';rk.className='v danger'}
+ else if(!ct.closing){rk.textContent='MENJAUH';rk.className='v ok'}
+ else if(ct.cpa<0.4){rk.textContent='TINGGI';rk.className='v danger'}
+ else if(ct.cpa<1){rk.textContent='SEDANG';rk.className='v warn'}
+ else{rk.textContent='AMAN';rk.className='v ok'}
+}
+
+/* fase indikator (hanya mode 2) */
+function drawPhase(){const z=sim;
+ if(mode!=2){$('#phase').innerHTML='';return}
+ const ph=['Deteksi risiko','Menghindar','Aman','Kembali ke haluan'];
+ const cur=z.phase;
+ const reached=[true,cur>=1,cur>=3,cur>=4];
+ const done=[cur>=1,cur>=3,cur>=4,cur>=4&&z.resumed];
+ $('#phase').innerHTML=ph.map((p,i)=>{let cl='p';if(done[i])cl='p done';else if(reached[i])cl='p on';
+  return `<div class="${cl}">${i+1} · ${p}</div>`}).join('');
+}
+
+function info(){const z=sim;let m='';
+ if(z.hit)m='TUBRUKAN! Kapal tidak menjalankan aturan dengan benar.';
+ else if(z.end){
+   if(mode==1)m='Simulasi selesai tanpa tindakan.';
+   else if(mode==2)m=z.resumed?'Aman: give-way menghindar tegas & dini, lalu kembali ke haluan awal setelah lewat dan bebas.':'Aman: kapal saling melewati dengan jarak aman.';
+   else m='Simulasi selesai. Lihat evaluasi tindakan Anda di bawah.';
+ }else if(run){
+   if(mode==2&&z.phase>=3)m='Kapal sudah lewat & bebas — kembali ke haluan awal…';
+   else if(mode==2&&z.phase>=1)m='Give-way sedang menghindar…';
+   else m='Kapal saling mendekat (perhatikan CPA/TCPA)…';
+ }else m='Tekan Mulai untuk menjalankan simulasi'+(mode==3?' lalu kemudikan Kapal '+ctrl+'.':'.');
+ $('#sres').innerHTML=`<b>${z.s.hd}</b><div class="res">${z.s.t}</div><p class="mut">${z.s.a}</p><p class="mut" aria-live="polite">${m}</p>`;
+ if(z.hit||z.end)evaluate();else $('#evalbox').innerHTML='';
+}
+
+/* evaluasi */
+function evaluate(){const z=sim,s=z.s;
+ if(mode==1){
+  $('#evalbox').innerHTML=`<div class="evalitem"><div class="i b">✕</div><div><b>Tanpa tindakan menghindar.</b> ${z.hit?'Terjadi tubrukan.':'Kapal lolos, tetapi bila ada risiko tubrukan tindakan tetap wajib (Aturan 7 & 8).'}</div></div>`;return}
+ if(mode==2){
+  const items=[
+   ['g','Peran dikenali','Kapal give-way: '+s.gw.join(' & ')+'.'],
+   [z.hit?'b':'g',z.hit?'Belum aman':'CPA aman tercapai','CPA minimum ≈ '+NM(z.minD).toFixed(2)+' NM.'],
+   [z.resumed?'g':'b','Kembali ke haluan',z.resumed?'Kapal kembali ke haluan awal setelah lewat & bebas (Aturan 13/8).':'Belum sempat kembali ke haluan awal.']];
+  $('#evalbox').innerHTML='<div style="margin-top:12px;font-weight:600;font-size:.85rem">Evaluasi (mode aksi benar):</div>'+
+   items.map(([t,a,b])=>`<div class="evalitem"><div class="i ${t}">${t=='g'?'✓':'✕'}</div><div><b>${a}</b> — ${b}</div></div>`).join('');return}
+ // mode 3 — nilai kapal yang dikemudikan
+ const isGW=s.gw.includes(ctrl);let items=[],score=0,max=4;
+ let dirOK=false,dirMsg='';
+ if(fog){ // Aturan 19: tak saling melihat, tak ada give-way/stand-on
+  if(z.acted){dirOK=z.actRud>=0;dirMsg=z.actRud<0?'Dalam kabut hindari belok ke kiri terhadap kapal di depan melintang (Aturan 19(d)).':'Perubahan haluan ke kanan / kurangi kecepatan — sesuai Aturan 19.'}
+  else{dirOK=false;dirMsg='Dalam kabut wajib bertindak dini bila ada risiko — kurangi kecepatan atau ubah haluan (Aturan 19).'}
+ }else if(isGW){
+  if(z.acted){dirOK=z.actRud>0;dirMsg=dirOK?'Belok ke kanan (starboard) — sesuai peran give-way.':'Belok ke kiri — kurang tepat untuk give-way pada situasi ini.'}
+  else dirMsg='Tidak ada perubahan haluan yang jelas. Give-way wajib bertindak tegas (Aturan 16).';
+ }else{
+  if(!z.acted){dirOK=true;dirMsg='Mempertahankan haluan & kecepatan — benar untuk stand-on (Aturan 17).'}
+  else{dirOK=z.actRud>=0;dirMsg=z.actRud<0?'Sebagai stand-on, hindari belok ke kiri (Aturan 17).':'Anda bertindak sebagai stand-on; boleh bila give-way jelas tidak bertindak.'}
+ }
+ if(dirOK)score++;items.push([dirOK?'g':'b',fog?'Tindakan (kabut)':isGW?'Arah tindakan':'Peran stand-on',dirMsg]);
+ let timeOK,timeMsg;
+ if(fog||isGW){if(z.acted){timeOK=z.actT<6;timeMsg=timeOK?'Tindakan diambil cukup dini.':'Tindakan agak terlambat — ambil aksi lebih awal.'}else{timeOK=false;timeMsg='Tidak ada tindakan.'}}
+ else{timeOK=true;timeMsg='Sesuai; stand-on tidak perlu aksi dini.'}
+ if(timeOK)score++;items.push([timeOK?'g':'b','Ketepatan waktu',timeMsg]);
+ const safe=!z.hit&&NM(z.minD)>=0.4;
+ if(safe)score++;items.push([safe?'g':'b','Hasil kedekatan',z.hit?'Terjadi tubrukan.':'CPA minimum ≈ '+NM(z.minD).toFixed(2)+' NM.']);
+ const spdOK=fog?engine<=12:(engine<=16||safe);
+ if(spdOK)score++;items.push([spdOK?'g':'b','Kecepatan aman','Kecepatan diperintahkan '+engine+' kn'+(fog?' (kabut: kurangi kecepatan, Aturan 6 & 19).':' (Aturan 6).')]);
+ const pct=Math.round(score/max*100);saveScore(pct);
+ $('#evalbox').innerHTML='<div style="margin-top:12px;font-weight:600;font-size:.85rem">Evaluasi tindakan Anda (Kapal '+ctrl+(fog?', kabut':'')+'):</div>'+
+  items.map(([t,a,b])=>`<div class="evalitem"><div class="i ${t}">${t=='g'?'✓':'✕'}</div><div><b>${a}</b> — ${b}</div></div>`).join('')+
+  `<div style="margin-top:10px">Skor: <span class="score-pill" style="color:${pct>=75?'var(--grn)':pct>=50?'var(--amber)':'var(--red)'}">${pct} / 100</span></div>`;
+}
+function saveScore(pct){try{const k='p2tl_manual_scores';const a=JSON.parse(localStorage.getItem(k)||'[]');
+ a.push({t:Date.now(),s:S[+$('#ss').value].n+(fog?' [kabut]':'')+' · kapal '+ctrl,skor:pct});localStorage.setItem(k,JSON.stringify(a.slice(-50)))}catch(e){}}
+
+/* gambar kapal */
+function ship(o,c,lbl,role){
+ const tr=o.tr.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+ return `<polyline points="${tr}" fill="none" stroke="${c}" stroke-width="1.5" opacity=".5"/>`+
+  `<g transform="translate(${o.x.toFixed(1)} ${o.y.toFixed(1)}) rotate(${o.h.toFixed(1)})"><path d="M0-20L10 12L0 7L-10 12Z" fill="${c}"/></g>`+
+  `<text x="${(o.x+16).toFixed(1)}" y="${(o.y+2).toFixed(1)}" fill="var(--ink)" font-size="15" font-weight="600">${lbl}</text>`+
+  (role?`<text x="${(o.x+16).toFixed(1)}" y="${(o.y+18).toFixed(1)}" fill="${c}" font-size="12">${role}</text>`:'');
+}
+function drawS(){const z=sim,s=z.s;
+ const roleA=s.gw.includes('A')?'give-way':'stand-on',roleB=s.gw.includes('B')?'give-way':'stand-on';
+ // cincin jarak berpusat di A
+ let rings='';for(let r=1;r<=4;r++){rings+=`<circle cx="${z.A.x.toFixed(1)}" cy="${z.A.y.toFixed(1)}" r="${r*PXNM}" fill="none" stroke="#16324a" stroke-width="1"/>`;}
+ rings+=`<text x="${(z.A.x+PXNM+3).toFixed(1)}" y="${(z.A.y-4).toFixed(1)}" fill="#3a6a86" font-size="10">1 NM</text>`;
+ // salib N-S / E-W
+ const grid=`<line x1="0" x2="${CW}" y1="${z.A.y}" y2="${z.A.y}" stroke="#12283b"/><line x1="${z.A.x}" x2="${z.A.x}" y1="0" y2="${CH}" stroke="#12283b"/>`;
+ const bg=fog?'#141c22':'#08182a';
+ const rA=fog?'give-way (tak berlaku di kabut)':roleA, rB=fog?'':roleB;
+ const hdr=fog?'🌫 KABUT — kapal tak saling melihat (Aturan 19). Radar/ARPA jadi acuan.':'Utara ↑ · cincin = jarak dari A (1 NM) · lingkaran hijau = batas CPA aman';
+ let fogov=fog?`<circle cx="${z.A.x.toFixed(1)}" cy="${z.A.y.toFixed(1)}" r="${(2*PXNM).toFixed(0)}" fill="#9fb3c0" opacity=".05"/>`:'';
+ // sorot kapal yang dikemudikan di mode manual
+ const hl=(mode==3)?(()=>{const o=ctrl=='A'?z.A:z.B;return `<circle cx="${o.x.toFixed(1)}" cy="${o.y.toFixed(1)}" r="20" fill="none" stroke="#ffd60a" stroke-width="2" opacity=".8"/>`})():'';
+ $('#sv').innerHTML=`<rect width="${CW}" height="${CH}" fill="${bg}"/>`+
+  grid+rings+fogov+
+  `<text x="12" y="22" fill="${fog?'#c9b98a':'#93a9ba'}" font-size="13">${hdr}</text>`+
+  `<circle cx="${z.A.x.toFixed(1)}" cy="${z.A.y.toFixed(1)}" r="${(0.5*PXNM).toFixed(0)}" fill="none" stroke="#1e8e5a" stroke-dasharray="4 5" opacity=".6"/>`+
+  hl+ship(z.B,'var(--tgt)','B',rB)+ship(z.A,'var(--own)','A (Anda)',rA)+
+  (z.hit?`<circle cx="${z.A.x.toFixed(1)}" cy="${z.A.y.toFixed(1)}" r="24" fill="none" stroke="#ff3b30" stroke-width="4"/>`:'');
+ drawPhase();readouts();
+}
+
+/* animasi: real detik * sp -> detik-sim */
+function frame(n){if(!run)return;let dt=(n-last)/1000;if(dt>0.05)dt=0.05;last=n;
+ step(dt*sp*2.2);drawS();info();
+ if(sim.hit||sim.end){run=false;$('#pl').textContent='Ulangi';return}
+ raf=requestAnimationFrame(frame)}
+
+$('#ss').onchange=reset;
+$('#pl').onclick=()=>{
+ if(run){run=false;$('#pl').textContent='Lanjut';cancelAnimationFrame(raf);return}
+ if(sim.hit||sim.end)reset();
+ run=true;last=performance.now();$('#pl').textContent='Jeda';raf=requestAnimationFrame(frame)};
+$('#rs2').onclick=reset;
+
+/* kecepatan simulasi */
+function sgSpd(){const el=$('#spd');el.innerHTML='';[[.5,'0,5x'],[1,'1x'],[2,'2x']].forEach(([v,t])=>{
+ const b=document.createElement('button');b.textContent=t;b.setAttribute('aria-pressed',sp==v);
+ b.onclick=()=>{sp=v;sgSpd()};el.append(b)})}
+sgSpd();
+
+/* kontrol manual */
+function updateHelm(){
+ const rv=+$('#rud').value,ev=+$('#eng').value;rudder=rv;engine=ev;
+ $('#rud-val').textContent=rv==0?'Midship':(Math.abs(rv)+'° '+(rv>0?'Stbd':'Port'));
+ const et=ev==0?'Stop':ev<=5?'Slow':ev<=12?'Half':'Full';
+ $('#eng-val').textContent=et+' · '+ev+' kn';
+ const dir=rv==0?'MIDSHIP':(Math.abs(rv)+'° '+(rv>0?'STARBOARD':'PORT'));
+ $('#telegraph').textContent=dir+' · '+et.toUpperCase()+(ev>0?' AHEAD':'');
+ const w=$('#wheelspokes');if(w)w.setAttribute('transform',`rotate(${rv*2} 60 60)`);
+}
+$('#rud').addEventListener('input',updateHelm);
+$('#eng').addEventListener('input',updateHelm);
+
+reset();
+/* ============ KUIS ============ */
+const Q=[
+['Aturan mana yang mengatur dua kapal tenaga berhadapan haluan?',['Aturan 13','Aturan 14','Aturan 15','Aturan 17'],1,'Aturan 14: keduanya mengubah haluan ke kanan.'],
+['Kapal tenaga ≥ 50 m yang sedang berlayar wajib menunjukkan berapa lampu tiang?',['Satu','Dua','Tiga','Tidak ada'],1,'Aturan 23(a): dua lampu tiang, yang belakang lebih tinggi dari yang depan.'],
+['Berapa derajat busur lampu lambung (masing-masing)?',['67,5°','112,5°','135°','225°'],1,'Lampu lambung menyinari 112,5° per sisi; lampu buritan 135°; lampu tiang 225°.'],
+['Warna lampu lambung kiri kapal adalah…',['Hijau','Putih','Merah','Kuning'],2,'Merah di kiri (port), hijau di kanan (starboard).'],
+['Kapal penangkap ikan yang sedang trawling menunjukkan…',['Merah di atas putih','Hijau di atas putih','Dua merah vertikal','Merah-putih-merah'],1,'Aturan 26(b): trawl hijau di atas putih. Bukan trawl merah di atas putih.'],
+['Kapal A menyusul kapal B. Siapa yang harus menyingkir?',['Kapal A (yang menyusul)','Kapal B (yang disusul)','Keduanya','Yang lebih besar'],0,'Aturan 13: kapal yang menyusul harus menyingkir.'],
+['Dua tiup pendek pada kapal yang saling melihat berarti…',['Mengubah haluan ke kanan','Mengubah haluan ke kiri','Mesin mundur','Keraguan'],1,'Aturan 34(a): 1 pendek kanan, 2 pendek kiri, 3 pendek mesin mundur.'],
+['Lima tiup pendek atau lebih dan cepat berarti…',['Marabahaya','Isyarat peringatan (ragu maksud kapal lain)','Kapal berlabuh','Olah gerak ke kanan'],1,'Aturan 34(d): isyarat peringatan atas keraguan.'],
+['Kapal tenaga bergerak menurut air di kabut memberi isyarat…',['1 tiup panjang tiap ≤ 2 menit','2 tiup panjang tiap ≤ 2 menit','1 tiup pendek tiap menit','Tidak perlu'],0,'Aturan 35(a); bila berhenti: 2 tiup panjang.'],
+['Kapal tidak terkendali menunjukkan…',['Dua merah keliling vertikal','Merah-putih-merah','Tiga merah vertikal','Hijau di atas putih'],0,'Aturan 27(a). Merah-putih-merah untuk kapal terbatas olah gerak.'],
+['Bearing kompas kapal lain yang tetap menunjukkan…',['Tidak ada risiko','Risiko tubrukan','Kapal berhenti','Perlu menyusul'],1,'Aturan 7: bearing tidak berubah berarti risiko tubrukan.'],
+['Kapal stand-on harus…',['Berhenti','Mempertahankan haluan dan kecepatan','Belok ke kiri','Memberi isyarat 5 tiup pendek'],1,'Aturan 17. Boleh bertindak sendiri bila kapal give-way jelas tidak bertindak.']];
+let qi=0,sc=0,order=[],quizMode='latihan',qTimer=null,qLeft=0;
+const PASS=70;
+function sgQuizMode(){const el=$('#quizmode');el.innerHTML='';[['latihan','Latihan (umpan balik langsung)'],['ujian','Ujian (berwaktu, nilai lulus ≥70)']].forEach(([v,t])=>{
+ const b=document.createElement('button');b.textContent=t;b.setAttribute('aria-pressed',quizMode==v);b.onclick=()=>{quizMode=v;sgQuizMode();qstart()};el.append(b)})}
+sgQuizMode();
+function qstart(){if(qTimer){clearInterval(qTimer);qTimer=null}
+ order=Q.map((_,i)=>i).sort(()=>Math.random()-.5).slice(0,10);qi=0;sc=0;
+ if(quizMode=='ujian'){qLeft=order.length*20;} // 20 detik/soal
+ qshow()}
+function fmtT(s){const m=Math.floor(s/60),d=s%60;return m+':'+String(d).padStart(2,'0')}
+function qfinish(){if(qTimer){clearInterval(qTimer);qTimer=null}
+ const pct=Math.round(sc/order.length*100);
+ try{const k='p2tl_quiz_scores';const a=JSON.parse(localStorage.getItem(k)||'[]');a.push({t:Date.now(),skor:pct,mode:quizMode});localStorage.setItem(k,JSON.stringify(a.slice(-50)))}catch(e){}
+ let verdict;
+ if(quizMode=='ujian')verdict=pct>=PASS?`<b style="color:var(--grn)">LULUS</b> (batas ${PASS}).`:`<b style="color:var(--red)">BELUM LULUS</b> (batas ${PASS}). Pelajari lagi materi lalu ulangi.`;
+ else verdict=sc>=8?'Sangat baik.':sc>=6?'Cukup baik. Buka lagi materi Bagian B & C.':'Pelajari lagi materi dari awal.';
+ $('#qbox').innerHTML=`<h2 style="margin-top:0">Skor: ${sc}/${order.length} (${pct})</h2><p>${verdict}</p><button class="pri" id="rs">Ulangi</button>`;$('#rs').onclick=qstart;
+}
+function qshow(){const b=$('#qbox');
+ if(qi>=order.length){qfinish();return}
+ const q=Q[order[qi]],op=q[1].map((t,i)=>[t,i]).sort(()=>Math.random()-.5);
+ const timer=quizMode=='ujian'?`<span style="float:right;font-family:ui-monospace,monospace" id="qtime">${fmtT(qLeft)}</span>`:'';
+ b.innerHTML=`<p class="mut">Soal ${qi+1} dari ${order.length}${timer}</p><p><b>${q[0]}</b></p>`+op.map(([t,i])=>`<button class="opt" data-i="${i}">${t}</button>`).join('')+'<div id="fb"></div>';
+ if(quizMode=='ujian'&&!qTimer){qTimer=setInterval(()=>{qLeft--;const el=$('#qtime');if(el)el.textContent=fmtT(qLeft);if(qLeft<=0){clearInterval(qTimer);qTimer=null;qfinish()}},1000)}
+ b.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{const ok=+o.dataset.i==q[2];if(ok)sc++;
+  b.querySelectorAll('.opt').forEach(x=>{x.disabled=true});
+  if(quizMode=='latihan'){b.querySelectorAll('.opt').forEach(x=>{if(+x.dataset.i==q[2])x.classList.add('ok')});if(!ok)o.classList.add('no');
+   $('#fb').innerHTML=`<div class="res">${ok?'Benar. ':'Belum tepat. '}${q[3]}</div><button class="pri" id="nx">${qi+1<order.length?'Soal berikutnya':'Lihat skor'}</button>`;
+   $('#nx').onclick=()=>{qi++;qshow()}}
+  else{qi++;qshow()} // ujian: langsung lanjut tanpa umpan balik
+ })}
+qstart();
+
+/* ============ BENTUK SIANG (day shapes) ============ */
+const DS={
+ anchor:{n:'Kapal berlabuh',r:'Aturan 30(a)',s:[['ball','Bola hitam (di depan)']],note:'Satu bola hitam di bagian depan.'},
+ ram:{n:'Kapal terbatas olah gerak',r:'Aturan 27(b)(ii)',s:[['ball','Bola'],['diamond','Belah ketupat'],['ball','Bola']],note:'Bola – belah ketupat – bola, tersusun tegak.'},
+ nuc:{n:'Kapal tidak terkendali',r:'Aturan 27(a)(ii)',s:[['ball','Bola'],['ball','Bola']],note:'Dua bola hitam tersusun tegak.'},
+ cbd:{n:'Kapal terbatas oleh sarat',r:'Aturan 28',s:[['cyl','Silinder']],note:'Satu silinder hitam.'},
+ sailpower:{n:'Kapal layar memakai mesin',r:'Aturan 25(e)',s:[['cone','Kerucut (puncak ke bawah)']],note:'Satu kerucut, puncak mengarah ke bawah.'},
+ fish:{n:'Kapal menangkap ikan',r:'Aturan 26(b)(ii)',s:[['cone','Kerucut atas'],['cone-up','Kerucut bawah (puncak menyatu)']],note:'Dua kerucut disatukan pada puncaknya (bentuk jam pasir).'},
+ tow:{n:'Menunda >200 m',r:'Aturan 24(a)(v)',s:[['diamond','Belah ketupat']],note:'Belah ketupat bila panjang tunda melebihi 200 m.'},
+ aground:{n:'Kapal kandas',r:'Aturan 30(d)',s:[['ball','Bola'],['ball','Bola'],['ball','Bola']],note:'Tiga bola hitam tersusun tegak.'}};
+let dvk='anchor';
+$('#dvs').innerHTML=Object.entries(DS).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join('');
+$('#dvs').onchange=e=>{dvk=e.target.value;drawDay()};
+function shapeSVG(kind,cx,cy){const c='#0d0d0d',st='#e4eef5';
+ if(kind=='ball')return `<circle cx="${cx}" cy="${cy}" r="16" fill="${c}" stroke="${st}"/>`;
+ if(kind=='diamond')return `<path d="M${cx} ${cy-18} L${cx+16} ${cy} L${cx} ${cy+18} L${cx-16} ${cy} Z" fill="${c}" stroke="${st}"/>`;
+ if(kind=='cyl')return `<rect x="${cx-13}" y="${cy-18}" width="26" height="36" rx="3" fill="${c}" stroke="${st}"/>`;
+ if(kind=='cone')return `<path d="M${cx-16} ${cy-16} L${cx+16} ${cy-16} L${cx} ${cy+18} Z" fill="${c}" stroke="${st}"/>`;
+ if(kind=='cone-up')return `<path d="M${cx-16} ${cy+16} L${cx+16} ${cy+16} L${cx} ${cy-18} Z" fill="${c}" stroke="${st}"/>`;
+ return ''}
+function drawDay(){const v=DS[dvk];
+ let s=`<rect width="300" height="260" fill="#bcd3e0"/>`; // langit siang
+ s+=`<rect y="200" width="300" height="60" fill="#7fa8c0"/>`; // laut
+ // tiang & bentuk
+ const cx=150;let cy=60;
+ s+=`<line x1="${cx}" y1="40" x2="${cx}" y2="205" stroke="#3a4b57" stroke-width="3"/>`;
+ v.s.forEach((sh,i)=>{s+=shapeSVG(sh[0],cx,60+i*46)});
+ // badan kapal sederhana
+ s+=`<path d="M95 205 L205 205 L190 225 L110 225 Z" fill="#26404f" stroke="#12262f"/>`;
+ $('#dscene').innerHTML=s;
+ $('#dref').textContent=v.n+' – '+v.r;
+ $('#dleg').innerHTML=v.s.map(sh=>`<li>${sh[1]}</li>`).join('');
+ $('#dnote').textContent=v.note+' Ditunjukkan pada siang hari sebagai pengganti lampu malam.';
+}
+drawDay();
+
+/* ============ ISYARAT BUNYI (Web Audio) ============ */
+let AC=null;
+function ac(){if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();return AC}
+function blast(start,dur){const a=ac();const o=a.createOscillator(),g=a.createGain();
+ o.type='sawtooth';o.frequency.value=180; // nada tanduk kapal
+ g.gain.setValueAtTime(0,a.currentTime+start);g.gain.linearRampToValueAtTime(.5,a.currentTime+start+.03);
+ g.gain.setValueAtTime(.5,a.currentTime+start+dur-.05);g.gain.linearRampToValueAtTime(0,a.currentTime+start+dur);
+ o.connect(g);g.connect(a.destination);o.start(a.currentTime+start);o.stop(a.currentTime+start+dur+.02)}
+function playPattern(p){ // p: array of ['s'|'l'] ; s=1s pendek, l=1.5s panjang (dipersingkat utk demo)
+ let t=0;p.forEach(k=>{const d=k=='l'?1.4:0.5;blast(t,d);t+=d+0.35})}
+const SIG=[
+ {n:'1 tiup pendek','p':['s'],'d':'Aturan 34(a): Saya mengubah haluan ke kanan.'},
+ {n:'2 tiup pendek','p':['s','s'],'d':'Aturan 34(a): Saya mengubah haluan ke kiri.'},
+ {n:'3 tiup pendek','p':['s','s','s'],'d':'Aturan 34(a): Mesin saya bergerak mundur.'},
+ {n:'5 tiup pendek (peringatan)','p':['s','s','s','s','s'],'d':'Aturan 34(d): Ragu terhadap maksud/tindakan kapal lain.'},
+ {n:'1 tiup panjang','p':['l'],'d':'Aturan 34(c)/Aturan 35: peringatan (mis. mendekati tikungan) atau kapal tenaga bergerak di kabut (tiap ≤2 menit).'},
+ {n:'2 tiup panjang','p':['l','l'],'d':'Aturan 35(b): kapal tenaga berhenti (tidak bergerak menurut air) di kabut, tiap ≤2 menit.'},
+ {n:'1 panjang + 2 pendek','p':['l','s','s'],'d':'Aturan 35(c): kapal tak terkendali/terbatas olah gerak/menangkap ikan/menunda, di kabut.'}];
+function renderSounds(){$('#soundlist').innerHTML=SIG.map((s,i)=>
+ `<div class="evalitem" style="align-items:center"><button class="pri" style="margin:0;flex:none" data-i="${i}">🔊</button><div><b>${s.n}</b> — ${s.d}</div></div>`).join('');
+ $('#soundlist').querySelectorAll('button').forEach(b=>b.onclick=()=>playPattern(SIG[+b.dataset.i].p))}
+renderSounds();
+let sqAns=null;
+$('#splay').onclick=()=>{sqAns=Math.floor(Math.random()*SIG.length);playPattern(SIG[sqAns].p);
+ const opts=SIG.map((s,i)=>i).sort(()=>Math.random()-.5).slice(0,4);
+ if(!opts.includes(sqAns)){opts[0]=sqAns;opts.sort(()=>Math.random()-.5)}
+ $('#squizbox').innerHTML='<button class="pri" id="sreplay" style="margin:8px 8px 8px 0">🔁 Putar ulang</button>'+
+  opts.map(i=>`<button class="opt" data-i="${i}">${SIG[i].n}</button>`).join('')+'<div id="sfb"></div>';
+ $('#sreplay').onclick=()=>playPattern(SIG[sqAns].p);
+ $('#squizbox').querySelectorAll('.opt').forEach(o=>o.onclick=()=>{const ok=+o.dataset.i==sqAns;
+  $('#squizbox').querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(+x.dataset.i==sqAns)x.classList.add('ok')});if(!ok)o.classList.add('no');
+  $('#sfb').innerHTML=`<div class="res">${ok?'Benar. ':'Belum tepat. '}${SIG[sqAns].n} — ${SIG[sqAns].d}</div>`})};
+
+/* ============ NILAI (rekap) ============ */
+function loadArr(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return[]}}
+function avg(a){return a.length?Math.round(a.reduce((s,x)=>s+x.skor,0)/a.length):0}
+function fmtDate(t){const d=new Date(t);return d.toLocaleDateString('id-ID')+' '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
+function renderNilai(){
+ const quiz=loadArr('p2tl_quiz_scores'),man=loadArr('p2tl_manual_scores');
+ let h='';
+ h+=`<div class="box"><b>Kuis</b> — rata-rata <span class="score-pill" style="color:var(--acc)">${avg(quiz)}</span> dari ${quiz.length} percobaan`;
+ if(quiz.length)h+='<div style="margin-top:8px">'+quiz.slice().reverse().slice(0,15).map(x=>`<div class="readout"><span class="k">${fmtDate(x.t)}${x.mode?' · '+x.mode:''}</span><span class="v" style="color:${x.skor>=70?'var(--grn)':'var(--amber)'}">${x.skor}</span></div>`).join('')+'</div>';
+ else h+='<p class="mut" style="margin:6px 0 0">Belum ada data.</p>';
+ h+='</div>';
+ h+=`<div class="box"><b>Latihan manuver (manual)</b> — rata-rata <span class="score-pill" style="color:var(--acc)">${avg(man)}</span> dari ${man.length} percobaan`;
+ if(man.length)h+='<div style="margin-top:8px">'+man.slice().reverse().slice(0,15).map(x=>`<div class="readout"><span class="k">${fmtDate(x.t)} · ${x.s}</span><span class="v" style="color:${x.skor>=70?'var(--grn)':'var(--amber)'}">${x.skor}</span></div>`).join('')+'</div>';
+ else h+='<p class="mut" style="margin:6px 0 0">Belum ada data.</p>';
+ h+='</div>';
+ $('#nilaibox').innerHTML=h;
+}
+$('#printbtn').onclick=()=>window.print();
+$('#clearbtn').onclick=()=>{if(confirm('Hapus semua riwayat nilai di perangkat ini?')){localStorage.removeItem('p2tl_quiz_scores');localStorage.removeItem('p2tl_manual_scores');renderNilai()}};
+// perbarui rekap saat tab Nilai dibuka
+document.querySelectorAll('nav button').forEach((b,i)=>{const orig=b.onclick;b.onclick=e=>{orig(e);if(tabs[i][0]=='nilai')renderNilai()}});
+renderNilai();
+</script></body></html>
